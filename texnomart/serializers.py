@@ -11,7 +11,7 @@ class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
 
     def get_product_count(self, obj):
-        return obj.product.count()
+        return obj.product_count
 
     class Meta:
         model = CategoryModel
@@ -22,11 +22,10 @@ class ProductSerializer(serializers.ModelSerializer):
     is_liked = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
 
-    def get_is_liked(self, products):
+    def get_is_liked(self, product):
         request = self.context.get('request')
-        if request.user.is_authenticated:
-            if_liked = products.is_liked.filter(id=request.user.id).exists()
-            return if_liked
+        if request and request.user.is_authenticated:
+            return product.is_liked.filter(id=request.user.id).exists()
         return False
 
     def get_image(self, products):
@@ -44,12 +43,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class ProductModelSerializer(ModelSerializer):
     category = serializers.CharField(source="category.title")
-    is_liked = serializers.SerializerMethodField(method_name='get_is_liked')
-    count_is_liked = serializers.SerializerMethodField(method_name='get_count_is_liked')
+    is_liked_count = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField(method_name='get_image')
     avg_rating = serializers.SerializerMethodField(method_name='get_avg_rating')
     all_images = serializers.SerializerMethodField(method_name='get_all_images')
     attributes = serializers.SerializerMethodField(method_name='get_attribute')
+
+    def get_is_liked_count(self, obj):
+        return obj.is_liked.count()
 
     def get_attribute(self, instance):
         attributes = [{str(attribute.key): str(attribute.value)} for attribute in instance.attributes.all()]
@@ -82,15 +83,6 @@ class ProductModelSerializer(ModelSerializer):
             request = self.context.get('request')
             return request.build_absolute_uri(image_url)
 
-    def get_count_is_liked(self, instance):
-        return instance.is_liked.count()
-
-    def get_is_liked(self, obj):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            if user in obj.is_liked.all():
-                return True
-            return False
 
     class Meta:
         model = ProductModel
@@ -139,7 +131,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
-        # Remove the password2 field
         validated_data.pop('password2', None)
         password = validated_data.pop('password')
         user = User.objects.create(**validated_data)

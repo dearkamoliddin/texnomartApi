@@ -3,7 +3,10 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveDestroyAPIView, RetrieveAPIView
+from rest_framework.generics import (
+    ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView, RetrieveDestroyAPIView,
+    RetrieveAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView
+)
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
@@ -13,6 +16,7 @@ from texnomart.models import CategoryModel, ProductModel, AttributeModel, KeyMod
 from texnomart.serializers import ProductSerializer, ProductModelSerializer, AttributeSerializer, KeySerializer, ValueSerializer
 from rest_framework.pagination import PageNumberPagination
 from django.core.cache import cache
+from django.db.models import Count
 
 
 class ProductPagination(PageNumberPagination):
@@ -28,34 +32,27 @@ class ProductFilter(django_filters.FilterSet):
         fields = ['name', 'category']
 
 
-class ProductListView(ListCreateAPIView):
+class ProductListView(ListAPIView):
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
     filterset_class = ProductFilter
-    search_fields = ['name', 'category__name']
+    search_fields = ['name', 'product__name']
     ordering_fields = '__all__'
     ordering = ['name']
 
-    # def get_queryset(self):
-    #     category_slug = self.kwargs.get('category_slug')
-    #     if not category_slug:
-    #         raise NotFound("Category slug not provided")
-    #     category = get_object_or_404(CategoryModel, slug=category_slug)
-    #     queryset = ProductModel.objects.filter(category=category).select_related('category')
-    #     return queryset
-
     def get_queryset(self):
-        queryset = ProductModel.objects.all()
-        price_min = self.request.query_params.get('price_min', None)
-        price_max = self.request.query_params.get('price_max', None)
-
-        if price_min is not None:
-            queryset = queryset.filter(price__gte=price_min)
-        if price_max is not None:
-            queryset = queryset.filter(price__lte=price_max)
-
+        category_slug = self.kwargs.get('category_slug')
+        if not category_slug:
+            raise NotFound("Category slug not provided")
+        category = get_object_or_404(CategoryModel, slug=category_slug)
+        queryset = ProductModel.objects.filter(category=category).select_related('category')
         return queryset
+
+
+class ProductAllView(ListAPIView):
+    serializer_class = ProductSerializer
+    queryset = ProductModel.objects.all()
 
 
 class ProductDetailView(RetrieveAPIView):
@@ -69,7 +66,7 @@ class ProductDetailView(RetrieveAPIView):
 
 class ProductUpdateView(RetrieveUpdateAPIView):
     queryset = ProductModel.objects.all()
-    serializer_class = ProductModelSerializer
+    serializer_class = ProductSerializer
     lookup_field = 'id'
 
 
@@ -81,7 +78,6 @@ class ProductDeleteView(RetrieveDestroyAPIView):
 
 class ProductAttributeView(ListCreateAPIView):
     queryset = AttributeModel.objects.all()
-    #queryset = ProductModel.objects.select_related('group').prefetch_related('attributes__key', 'attributes__value')
     serializer_class = AttributeSerializer
     lookup_field = 'slug'
 

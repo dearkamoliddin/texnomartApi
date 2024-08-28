@@ -2,9 +2,10 @@ from django.urls import path
 from rest_framework.authtoken import views
 from texnomart.views.auth import LoginAPIView, LogoutAPIView, RegisterAPIView
 from texnomart.custom_token import CustomAuthToken
-from texnomart.views.category import CategoryList, CategoryDetailView
+from texnomart.views.category import CategoryListView, CategoryAddView, CategoryUpdateView, CategoryDeleteView
 from texnomart.views.product import (
     ProductListView,
+    ProductAllView,
     ProductDetailView,
     ProductUpdateView,
     ProductDeleteView,
@@ -15,11 +16,15 @@ from texnomart.views.product import (
 
 urlpatterns = [
     # categories
-    path('categories/', CategoryList.as_view()),
+    path('categories/', CategoryListView.as_view()),
+
+    path('category/add-category/', CategoryAddView.as_view()),
+    path('category/<slug:category_slug>/edit/', CategoryUpdateView.as_view()),
+    path('category/<slug:category_slug>/delete/', CategoryDeleteView.as_view()),
     path('category/<slug:category_slug>/', ProductListView.as_view()),
 
     # products
-    path('product/<slug:category_slug>/', ProductListView.as_view()),
+    path('', ProductAllView.as_view()),
     path('product/detail/<int:id>/', ProductDetailView.as_view()),
     path('product/<int:id>/edit/', ProductUpdateView.as_view()),
     path('product/<int:id>/delete/', ProductDeleteView.as_view()),
