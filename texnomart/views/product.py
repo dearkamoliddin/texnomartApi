@@ -17,6 +17,7 @@ from texnomart.serializers import ProductSerializer, ProductModelSerializer, Att
 from rest_framework.pagination import PageNumberPagination
 from django.core.cache import cache
 from django.db.models import Count
+from texnomart.permissions import CustomPermission
 
 
 class ProductPagination(PageNumberPagination):
@@ -33,6 +34,7 @@ class ProductFilter(django_filters.FilterSet):
 
 
 class ProductListView(ListAPIView):
+    permission_classes = [CustomPermission]
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
@@ -51,6 +53,13 @@ class ProductListView(ListAPIView):
 
 
 class ProductAllView(ListAPIView):
+    permission_classes = [CustomPermission]
+    serializer_class = ProductSerializer
+    queryset = ProductModel.objects.all()
+
+
+class ProductAddView(CreateAPIView):
+    permission_classes = [CustomPermission]
     serializer_class = ProductSerializer
     queryset = ProductModel.objects.all()
 
@@ -65,12 +74,14 @@ class ProductDetailView(RetrieveAPIView):
 
 
 class ProductUpdateView(RetrieveUpdateAPIView):
+    permission_classes = [CustomPermission]
     queryset = ProductModel.objects.all()
     serializer_class = ProductSerializer
     lookup_field = 'id'
 
 
 class ProductDeleteView(RetrieveDestroyAPIView):
+    permission_classes = [CustomPermission]
     queryset = ProductModel.objects.all()
     serializer_class = ProductModelSerializer
     lookup_field = 'id'

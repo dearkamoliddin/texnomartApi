@@ -8,7 +8,6 @@ from texnomart.models import CategoryModel, ProductModel, CommentModel, Attribut
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    product_count = serializers.SerializerMethodField()
 
     def get_product_count(self, obj):
         return obj.product_count
